@@ -1,6 +1,7 @@
 import { Client, Events, GatewayIntentBits, REST, Routes } from 'discord.js';
 import dotenv from 'dotenv';
 import { cameraCommands, handleInteraction, handleVoiceStateUpdate } from './utils/Camera.js';
+import { connectDB, pool } from './database/db.js';
 
 dotenv.config();
 
@@ -31,8 +32,15 @@ async function registerCommands() {
 }
 
 // Event handler for when the client is ready
-client.once(Events.ClientReady, () => {
+client.once(Events.ClientReady, async () => {
     console.log(`Logged in as ${client.user.tag}!`);
+
+    // Connect to the database
+    try {
+        await connectDB();
+    } catch (error) {
+        console.error('Failed to connect to the database:', error);
+    }
 });
 
 // Event handler for interaction events (e.g., slash commands)

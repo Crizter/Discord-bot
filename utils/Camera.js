@@ -1,8 +1,7 @@
-import { SlashCommandBuilder, ChannelType, GatewayIntentBits } from 'discord.js';
+import { SlashCommandBuilder, ChannelType } from 'discord.js';
+import { pool } from '../database/db.js';
 
-const channelStorage = new Map(); // Stores the voice channel IDs per server
-const userTimers = new Map(); // Stores timers for users
-const messageChannelStorage = new Map(); // Stores text channel IDs for sending messages
+const userTimers = new Map();
 
 export const cameraCommands = [
     new SlashCommandBuilder()
@@ -31,77 +30,115 @@ export const cameraCommands = [
         .setDescription('Sends a DM to members if the camera is disabled.')
 ].map(command => command.toJSON());
 
-export function handleInteraction(interaction) {
+export async function handleInteraction(interaction) {
     if (!interaction.isCommand()) return;
 
     const { commandName } = interaction;
 
     if (commandName === 'add-cam-channel') {
         const channel = interaction.options.getChannel('channel');
+        const serverId = interaction.guild.id;
 
         if (channel.type === ChannelType.GuildVoice) {
-            const serverId = interaction.guild.id;
-
-            if (!channelStorage.has(serverId)) {
-                channelStorage.set(serverId, new Set());
+            try {
+                // Store the channel in the database
+                await pool.query(
+                    'INSERT INTO camera_channels (server_id, channel_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                    [serverId, channel.id]
+                );
+                interaction.reply(`Voice channel ${channel.name} added to mandatory camera list.`);
+            } catch (error) {
+                console.error('Error adding channel to the database:', error);
+                interaction.reply('There was an error adding the channel to the database.');
             }
-
-            const channels = channelStorage.get(serverId);
-            channels.add(channel.id);
-            channelStorage.set(serverId, channels);
-
-            interaction.reply(`Voice channel ${channel.name} added to mandatory camera list.`);
         } else {
             interaction.reply('Please select a valid voice channel.');
         }
     } else if (commandName === 'enable-tracking') {
-        interaction.reply('Camera tracking enabled for stored channels.');
-    } else if (commandName === 'set-message-channel') {
+        const serverId = interaction.guild.id;
+    
+        try {
+            // Check if the server already exists in the database
+            const result = await pool.query('SELECT * FROM server WHERE server_id = $1', [serverId]);
+    
+            if (result.rows.length > 0) {
+                // If the server exists, update the enable_tracking status
+                await pool.query('UPDATE server SET enable_tracking = $2 WHERE server_id = $1', [serverId, true]);
+            } else {
+                // If the server does not exist, insert a new record
+                await pool.query('INSERT INTO server (server_id, enable_tracking) VALUES ($1, $2)', [serverId, true]);
+            }
+    
+            interaction.reply('Camera tracking enabled for stored channels.');
+        } catch (error) {
+            console.error('Error enabling tracking:', error);
+            interaction.reply('Failed to enable camera tracking. Please try again later.');
+        }
+    }
+    else if (commandName === 'set-message-channel') {
         const channel = interaction.options.getChannel('channel');
+        const serverId = interaction.guild.id;
 
         if (channel.type === ChannelType.GuildText) {
-            const serverId = interaction.guild.id;
-            messageChannelStorage.set(serverId, channel.id);
-            interaction.reply(`Message channel set to ${channel.name}.`);
+            try {
+                // Store the message channel in the database
+                await pool.query(
+                    'INSERT INTO message_channels (server_id, channel_id) VALUES ($1, $2) ON CONFLICT (server_id) DO UPDATE SET channel_id = $2',
+                    [serverId, channel.id]
+                );
+                interaction.reply(`Message channel set to ${channel.name}.`);
+            } catch (error) {
+                console.error('Error setting message channel in the database:', error);
+                interaction.reply('There was an error setting the message channel.');
+            }
         } else {
             interaction.reply('Please select a valid text channel.');
         }
     }
 }
 
-export function handleVoiceStateUpdate(oldState, newState) {
+export async function handleVoiceStateUpdate(oldState, newState) {
     const serverId = newState.guild.id;
-    const voiceChannels = channelStorage.get(serverId) || new Set();
-    // const messageChannelId = messageChannelStorage.get(serverId);
-    const messageChannelId = "1114596454623883287"
 
-    if (oldState.channelId !== newState.channelId) {
-        if (oldState.channelId && voiceChannels.has(oldState.channelId)) {
-            // User left a tracked voice channel
-            clearTimeout(userTimers.get(oldState.id));
-            userTimers.delete(oldState.id);
-        }
+    try {
+        // Fetch tracked channels and message channel from the database
+        const voiceChannelsResult = await pool.query(
+            'SELECT channel_id FROM camera_channels WHERE server_id = $1',
+            [serverId]
+        );
+        const messageChannelResult = await pool.query(
+            'SELECT channel_id FROM message_channels WHERE server_id = $1',
+            [serverId]
+        );
 
-        if (newState.channelId && voiceChannels.has(newState.channelId)) {
-            // User joined a tracked voice channel
-            const timer = setTimeout(() => {
-                const member = newState.channel.members.get(newState.id);
-                if (member) {
-                    member.voice.disconnect();
-                    
-                    // Sending a message to the text channel
-                    const textChannel = newState.guild.channels.cache.get(messageChannelId);
-                    if (textChannel && textChannel.isTextBased()) {
-                        textChannel.send(`Hey <@${newState.id}>, please turn on your camera!`);
-                    } else {
-                        console.error('Text channel not found or not valid.');
+        const voiceChannels = new Set(voiceChannelsResult.rows.map(row => row.channel_id));
+        const messageChannelId = messageChannelResult.rows[0]?.channel_id;
+
+        if (oldState.channelId !== newState.channelId) {
+            if (oldState.channelId && voiceChannels.has(oldState.channelId)) {
+                clearTimeout(userTimers.get(oldState.id));
+                userTimers.delete(oldState.id);
+            }
+
+            if (newState.channelId && voiceChannels.has(newState.channelId)) {
+                const timer = setTimeout(async () => {
+                    const member = newState.channel.members.get(newState.id);
+                    if (member) {
+                        member.voice.disconnect();
+
+                        if (messageChannelId) {
+                            const textChannel = newState.guild.channels.cache.get(messageChannelId);
+                            if (textChannel && textChannel.isTextBased()) {
+                                await textChannel.send(`Hey <@${newState.id}>, please turn on your camera!`);
+                            }
+                        }
                     }
-                } else {
-                    console.error('User not found in the voice channel.');
-                }
-            }, 60000); // 1 minute
+                }, 10000); // 30 seconds
 
-            userTimers.set(newState.id, timer);
+                userTimers.set(newState.id, timer);
+            }
         }
+    } catch (error) {
+        console.error('Error handling voice state update:', error);
     }
 }
