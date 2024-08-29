@@ -2,6 +2,7 @@ import { Client, Events, GatewayIntentBits, REST, Routes } from 'discord.js';
 import dotenv from 'dotenv';
 import { cameraCommands, handleInteraction, handleVoiceStateUpdate } from './utils/Camera.js';
 import { connectDB, pool } from './database/db.js';
+import { statsCommands, handleStats } from './utils/TimeActivity.js';
 
 dotenv.config();
 
@@ -24,7 +25,7 @@ const rest = new REST({ version: '10' }).setToken(TOKEN);
 async function registerCommands() {
     try {
         console.log('Started refreshing application (/) commands.');
-        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: cameraCommands });
+        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [...cameraCommands, ...statsCommands] });
         console.log('Successfully reloaded application (/) commands.');
     } catch (error) {
         console.error('Error registering application (/) commands:', error);
@@ -47,6 +48,7 @@ client.once(Events.ClientReady, async () => {
 client.on(Events.InteractionCreate, async interaction => {
     try {
         await handleInteraction(interaction);
+        await handleStats(interaction);
     } catch (error) {
         console.error('Error handling interaction:', error);
     }
