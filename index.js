@@ -3,7 +3,8 @@ import dotenv from 'dotenv';
 import { cameraCommands, handleInteraction, handleVoiceStateUpdate } from './utils/Camera.js';
 import { connectDB, pool } from './database/db.js';
 import { statsCommands, handleStats } from './utils/TimeActivity.js';
-
+import { handleVoiceTime } from './utils/TimeActivity.js';
+import { scheduleCronJobs } from './config/scheduleStats.js';
 dotenv.config();
 
 const TOKEN = process.env.BOT_TOKEN;
@@ -55,9 +56,15 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 // Event handler for voice state updates
-client.on(Events.VoiceStateUpdate, (oldState, newState) => {
+client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
+    const serverId = newState.guild.id;
+    const userId = newState.id;
+   
+    
     try {
-        handleVoiceStateUpdate(oldState, newState);
+      console.log('voice state udate', userId);
+        await handleVoiceStateUpdate(oldState, newState);
+        await handleVoiceTime(serverId, userId, oldState, newState);
     } catch (error) {
         console.error('Error handling voice state update:', error);
     }
@@ -79,5 +86,5 @@ async function main() {
         console.error('Error during bot startup:', error);
     }
 }
-
+scheduleCronJobs() ; 
 main();

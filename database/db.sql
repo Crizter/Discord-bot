@@ -31,3 +31,11 @@ CREATE TABLE timeActivity(
     all_time_hours FLOAT DEFAULT 0.0,  
     PRIMARY KEY (server_id, user_id)  
 );
+
+-- UPDATE THE TABLE OF TIME ACTIVITY 
+-- Add columns for tracking voice activity
+ALTER TABLE timeActivity
+ADD COLUMN join_time TIMESTAMP,
+ADD COLUMN leave_time TIMESTAMP,
+ADD COLUMN total_time FLOAT DEFAULT 0.0;
+

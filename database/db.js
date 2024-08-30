@@ -27,22 +27,24 @@ export const connectDB = async() => {
     }
 }
 // GET THE DAILY NUMBER OF HOURS BY USER 
-export const getDailyHours = async (server_id, user_id) => {
-    if (!server_id || !user_id) {
+export const getDailyHours = async (serverId, userId) => {
+    console.log('getDailyHours', serverId, userId);
+    
+    if (!serverId || !userId) {
         return null;  // Return null if parameters are missing
     }
 
     try {
         const result = await pool.query(
             'SELECT daily_hours FROM timeactivity WHERE server_id = $1 AND user_id = $2',
-            [server_id, user_id]
+            [serverId, userId]
         );
 
         if (result.rows.length === 0) {
             console.log('No data found');
             return null;  // Return null if no data is found
         }
-
+        
         const data = result.rows[0].daily_hours;
         return data;
 
@@ -55,15 +57,16 @@ export const getDailyHours = async (server_id, user_id) => {
 
 
 // GET WEEKLY NUMBER OF HOURS BY USER
-export const getWeeklyHours = async (server_id, user_id) => {
-    if (!server_id || !user_id) {
+export const getWeeklyHours = async (serverId, userId) => {
+    console.log('weeklyhours', serverId, userId);
+    if (!serverId || !userId) {
         return null;  // Return null if parameters are missing
     }
 
     try {
         const result = await pool.query(
             'SELECT weekly_hours FROM timeactivity WHERE server_id = $1 AND user_id = $2',
-            [server_id, user_id]
+            [serverId, userId]
         );
 
         if (result.rows.length === 0) {
@@ -81,15 +84,16 @@ export const getWeeklyHours = async (server_id, user_id) => {
 };
 
 // GET MONTHLY HOURS OF A USER
-export const getMonthlyHours = async (server_id, user_id) => {
-    if (!server_id || !user_id) {
+export const getMonthlyHours = async (serverId, userId) => {
+    console.log('monthly hours', serverId, userId);
+    if (!serverId || !userId) {
         return null;  // Return null if parameters are missing
     }
 
     try {
         const result = await pool.query(
             'SELECT monthly_hours FROM timeactivity WHERE server_id = $1 AND user_id = $2',
-            [server_id, user_id]
+            [serverId, userId]
         );
 
         if (result.rows.length === 0) {
@@ -109,15 +113,16 @@ export const getMonthlyHours = async (server_id, user_id) => {
 
 // GET ALL TIME HOURS 
 
-export const getAllTimeHours = async (server_id, user_id) => {
-    if (!server_id || !user_id) {
+export const getAllTimeHours = async (serverId, userId) => {
+    console.log('all time hours', serverId, userId);
+    if (!serverId || !userId) {
         return null;  // Return null if parameters are missing
     }
 
     try {
         const result = await pool.query(
             'SELECT all_time_hours FROM timeactivity WHERE server_id = $1 AND user_id = $2',
-            [server_id, user_id]
+            [serverId, userId]
         );
 
         if (result.rows.length === 0) {
@@ -137,19 +142,20 @@ export const getAllTimeHours = async (server_id, user_id) => {
 // GET AVERAGE HOURS PER MONTH OF USER 
 
 // GET AVERAGE HOURS PER MONTH OF USER
-export const averageHoursPerDay = async (server_id, user_id) => {
-    if (!server_id || !user_id) {
+export const averageHoursPerDay = async (serverId, userId) => {
+    console.log('average hours ', serverId, userId);
+    if (!serverId || !userId) {
         return null;  // Return null if parameters are missing
     }
 
     try {
         const { rows: dailyRows } = await pool.query(
             'SELECT daily_hours FROM timeactivity WHERE server_id = $1 AND user_id = $2',
-            [server_id, user_id]
+            [serverId, userId]
         );
         const { rows: monthlyRows } = await pool.query(
             'SELECT monthly_hours FROM timeactivity WHERE server_id = $1 AND user_id = $2',
-            [server_id, user_id]
+            [serverId, userId]
         );
 
         if (dailyRows.length === 0 || monthlyRows.length === 0) {
@@ -171,6 +177,5 @@ export const averageHoursPerDay = async (server_id, user_id) => {
     }
 };
 
+//  INSERT ACTIVITY DATA 
 
-
-// 
