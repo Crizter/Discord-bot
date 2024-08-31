@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChannelType } from 'discord.js';
+import { SlashCommandBuilder, ChannelType, PermissionsBitField } from 'discord.js';
 import { pool } from '../database/db.js';
 
 const userTimers = new Map();
@@ -26,14 +26,20 @@ export const cameraCommands = [
                 .addChannelTypes(ChannelType.GuildText)
         ),
     new SlashCommandBuilder()
-        .setName('notify-user')  // Renamed to follow proper naming conventions
+        .setName('notify-user')
         .setDescription('Sends a DM to members if the camera is disabled.')
 ].map(command => command.toJSON());
 
 export async function handleInteraction(interaction) {
     if (!interaction.isCommand()) return;
 
-    const { commandName } = interaction;
+    const { commandName, member } = interaction;
+
+    // Permission check
+    if (!member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
+        await interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+        return;
+    }
 
     if (commandName === 'add-cam-channel') {
         const channel = interaction.options.getChannel('channel');
@@ -74,8 +80,7 @@ export async function handleInteraction(interaction) {
             console.error('Error enabling tracking:', error);
             interaction.reply('Failed to enable camera tracking. Please try again later.');
         }
-    }
-    else if (commandName === 'set-message-channel') {
+    } else if (commandName === 'set-message-channel') {
         const channel = interaction.options.getChannel('channel');
         const serverId = interaction.guild.id;
 
@@ -94,6 +99,8 @@ export async function handleInteraction(interaction) {
         } else {
             interaction.reply('Please select a valid text channel.');
         }
+    } else if (commandName === 'notify-user') {
+        // Your notify-user command logic here
     }
 }
 
@@ -133,7 +140,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
                             }
                         }
                     }
-                }, 10000); // 30 seconds
+                }, 10000); // 10 seconds
 
                 userTimers.set(newState.id, timer);
             }

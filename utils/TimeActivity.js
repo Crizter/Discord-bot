@@ -2,6 +2,7 @@ import { EmbedBuilder, Events, SlashCommandBuilder } from "discord.js";
 import { pool } from "../database/db.js";  // Make sure this path is correct
 import { getDailyHours, getWeeklyHours, getMonthlyHours, getAllTimeHours, averageHoursPerDay } from "../database/db.js"
 import moment from 'moment'; // For date manipulation
+
 // CREATE EMBED
 const createTimeActivityEmbed = async (serverId, userId) => {
     const dailyHours = await getDailyHours(serverId, userId) || 0;
