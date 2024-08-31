@@ -37,11 +37,19 @@ const createTimeActivityEmbed = async (serverId, userId) => {
 
 };
 
-// COMMAND BUILDER 
+// COMMAND BUILDER
 export const statsCommands = [
     new SlashCommandBuilder()
         .setName('study-stats')
         .setDescription('Shows your personal study statistics'),
+    new SlashCommandBuilder()
+        .setName('study-stats-of-user')
+        .setDescription('Shows the study stats of another member.')
+        .addUserOption(option =>
+            option
+                .setName('target')
+                .setDescription('Select the member')
+                .setRequired(true))
 ].map(command => command.toJSON());
 
 // HANDLE STATS COMMAND 
@@ -55,6 +63,10 @@ export async function handleStats(interaction) {
     
     if (commandName === 'study-stats') {
         const embed = await createTimeActivityEmbed(guildId, userId);  // Pass the correct user ID
+        await interaction.reply({ embeds: [embed] });
+    }
+    if (commandName === 'study-stats' || commandName === 'study-stats-of-user') {
+        const embed = await createTimeActivityEmbed(guildId, userId);
         await interaction.reply({ embeds: [embed] });
     }
 }
