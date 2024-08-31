@@ -13,3 +13,4 @@ new SlashCommandBuilder()
     .setDescription('Adds bonus coins for the members who are turning the cam on or sharing the screen in voice channel.')
 
 
+ 

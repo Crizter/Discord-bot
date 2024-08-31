@@ -16,7 +16,7 @@ export const cameraCommands = [
     new SlashCommandBuilder()
         .setName('enable-tracking')
         .setDescription('Enable tracking of camera channel usage'),
-    new SlashCommandBuilder()
+    new SlashCommandBuilder()   
         .setName('set-message-channel')
         .setDescription('Set the text channel where the bot will send a message if a user does not have their camera on.')
         .addChannelOption(option =>

@@ -37,6 +37,7 @@ const createTimeActivityEmbed = async (serverId, userId) => {
 
 };
 
+
 // COMMAND BUILDER
 export const statsCommands = [
     new SlashCommandBuilder()
@@ -52,21 +53,23 @@ export const statsCommands = [
                 .setRequired(true))
 ].map(command => command.toJSON());
 
+
 // HANDLE STATS COMMAND 
 export async function handleStats(interaction) {
     if (!interaction.isCommand()) return;
 
     const { commandName, guildId } = interaction;
-    const userId = interaction.user.id;  // Correctly extract the user ID
-    console.log('from study stats in time activity', interaction);
-    console.log('from time activity handle stats', guildId, userId);
     
     if (commandName === 'study-stats') {
+        const userId = interaction.user.id;  // Correctly extract the user ID
         const embed = await createTimeActivityEmbed(guildId, userId);  // Pass the correct user ID
         await interaction.reply({ embeds: [embed] });
     }
-    if (commandName === 'study-stats' || commandName === 'study-stats-of-user') {
-        const embed = await createTimeActivityEmbed(guildId, userId);
+    
+    if (commandName === 'study-stats-of-user') {
+        const targetUser = interaction.options.getUser('target');
+        const targetUserId = targetUser.id;
+        const embed = await createTimeActivityEmbed(guildId, targetUserId);
         await interaction.reply({ embeds: [embed] });
     }
 }
