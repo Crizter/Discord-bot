@@ -27,7 +27,11 @@ export const cameraCommands = [
         ),
     new SlashCommandBuilder()
         .setName('notify-user')
-        .setDescription('Sends a DM to members if the camera is disabled.')
+        .setDescription('Sends a DM to members if the camera is disabled.'),
+    new SlashCommandBuilder() 
+        .setName('all-camera-channels')
+        .setDescription('Get all the camera channels in the server.')
+
 ].map(command => command.toJSON());
 
 export async function handleInteraction(interaction) {
@@ -35,8 +39,8 @@ export async function handleInteraction(interaction) {
 
     const { commandName, member } = interaction;
 
-    // Permission check
-    if (!member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
+       // Permission check
+       if (!member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
         await interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
         return;
     }
@@ -99,8 +103,31 @@ export async function handleInteraction(interaction) {
         } else {
             interaction.reply('Please select a valid text channel.');
         }
-    } else if (commandName === 'notify-user') {
-        // Your notify-user command logic here
+    } else if (commandName === 'all-camera-channels') {
+        const serverId = interaction.guild.id;
+
+        try {
+            // Retrieve all camera channels from the database
+            const result = await pool.query(
+                'SELECT channel_id FROM camera_channels WHERE server_id = $1',
+                [serverId]
+            );
+
+            if (result.rows.length > 0) {
+                const channelIds = result.rows.map(row => row.channel_id);
+                const channels = channelIds.map(id => interaction.guild.channels.cache.get(id)).filter(channel => channel);
+                const channelList = channels.length > 0
+                    ? channels.map(channel => channel.name).join(', ')
+                    : 'No camera channels found.';
+
+                await interaction.reply(`All camera channels: ${channelList}`);
+            } else {
+                await interaction.reply('No camera channels found.');
+            }
+        } catch (error) {
+            console.error('Error retrieving camera channels:', error);
+            await interaction.reply('Failed to retrieve camera channels. Please try again later.');
+        }
     }
 }
 
