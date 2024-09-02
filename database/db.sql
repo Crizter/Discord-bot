@@ -39,3 +39,21 @@ ADD COLUMN join_time TIMESTAMP,
 ADD COLUMN leave_time TIMESTAMP,
 ADD COLUMN total_time FLOAT DEFAULT 0.0;
 
+
+-- POMODORO TABLE 
+CREATE TABLE pomodoro_sessions (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    server_id BIGINT NOT NULL,
+    session_time INTEGER NOT NULL,   -- in minutes
+    break_time INTEGER NOT NULL,     -- in minutes
+    total_sessions INTEGER NOT NULL,
+    completed_sessions INTEGER DEFAULT 0,
+    current_state VARCHAR(20) DEFAULT 'idle', -- 'idle', 'session', 'break'
+    start_time TIMESTAMPTZ, -- Tracks the start time of the current session or break
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, server_id) -- Ensure one session per user per server
+);
+ALTER TABLE pomodoro_sessions ADD COLUMN current_session INTEGER DEFAULT 0;
+ALTER TABLE pomodoro_sessions ADD COLUMN time_remaining TIMESTAMPTZ;

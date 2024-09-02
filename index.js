@@ -5,6 +5,9 @@ import { connectDB, pool } from './database/db.js';
 import { statsCommands, handleStats } from './utils/TimeActivity.js';
 import { handleVoiceTime } from './utils/TimeActivity.js';
 import { scheduleCronJobs } from './config/scheduleStats.js';
+import { handlePomodoro } from './utils/Pomodoro.js';
+import { pomodoroCommands } from './utils/Pomodoro.js';
+
 dotenv.config();
 
 const TOKEN = process.env.BOT_TOKEN;
@@ -26,7 +29,7 @@ const rest = new REST({ version: '10' }).setToken(TOKEN);
 async function registerCommands() {
     try {
         console.log('Started refreshing application (/) commands.');
-        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [...cameraCommands, ...statsCommands] });
+        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [...cameraCommands, ...statsCommands, ...pomodoroCommands] });
         console.log('Successfully reloaded application (/) commands.');
     } catch (error) {
         console.error('Error registering application (/) commands:', error);
@@ -50,6 +53,7 @@ client.on(Events.InteractionCreate, async interaction => {
     try {
         await handleInteraction(interaction);
         await handleStats(interaction);
+        await handlePomodoro(interaction) ;
     } catch (error) {
         console.error('Error handling interaction:', error);
     }
