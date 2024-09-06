@@ -7,7 +7,8 @@ import { handleVoiceTime } from './utils/TimeActivity.js';
 import { scheduleCronJobs } from './config/scheduleStats.js';
 import { handlePomodoro } from './utils/Pomodoro.js';
 import { pomodoroCommands } from './utils/Pomodoro.js';
-import { handleReactions, reactionCommands } from './utils/Reactions.js';
+import {listenReaction, handleReactions, reactionCommands } from './utils/Reactions.js';
+
 dotenv.config();
 
 const TOKEN = process.env.BOT_TOKEN;
@@ -56,10 +57,16 @@ client.on(Events.InteractionCreate, async interaction => {
         await handleStats(interaction);
         await handlePomodoro(interaction) ;
         await handleReactions(interaction);
+        
     } catch (error) {
         console.error('Error handling interaction:', error);
     }
 });
+
+// LISTENT TO THE EVENT REACTION 
+client.on(Events.MessageReactionAdd, async(reaction,user) => { 
+    listenReaction(reaction,user) ; 
+}) ;
 
 // Event handler for voice state updates
 client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
