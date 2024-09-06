@@ -7,7 +7,7 @@ import { handleVoiceTime } from './utils/TimeActivity.js';
 import { scheduleCronJobs } from './config/scheduleStats.js';
 import { handlePomodoro } from './utils/Pomodoro.js';
 import { pomodoroCommands } from './utils/Pomodoro.js';
-
+import { handleReactions, reactionCommands } from './utils/Reactions.js';
 dotenv.config();
 
 const TOKEN = process.env.BOT_TOKEN;
@@ -20,6 +20,7 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMessageReactions,
     ],
 });
 
@@ -29,7 +30,7 @@ const rest = new REST({ version: '10' }).setToken(TOKEN);
 async function registerCommands() {
     try {
         console.log('Started refreshing application (/) commands.');
-        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [...cameraCommands, ...statsCommands, ...pomodoroCommands] });
+        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [...cameraCommands, ...statsCommands, ...pomodoroCommands,...reactionCommands] });
         console.log('Successfully reloaded application (/) commands.');
     } catch (error) {
         console.error('Error registering application (/) commands:', error);
@@ -54,6 +55,7 @@ client.on(Events.InteractionCreate, async interaction => {
         await handleInteraction(interaction);
         await handleStats(interaction);
         await handlePomodoro(interaction) ;
+        await handleReactions(interaction);
     } catch (error) {
         console.error('Error handling interaction:', error);
     }
