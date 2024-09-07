@@ -59,12 +59,13 @@ ALTER TABLE pomodoro_sessions ADD COLUMN current_session INTEGER DEFAULT 0;
 ALTER TABLE pomodoro_sessions ADD COLUMN time_remaining TIMESTAMPTZ;
 
 
--- MESSAGES REACTIONS TABLE
- 
-CREATE TABLE reactions_table ( 
-    id SERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL, 
-    server_id BIGINT NOT NULL,
-    channel_id BIGINT NOT NULL,
-    messages VARCHAR(500) NOT NULL    
-)
+-- REACTIONS TABLE
+CREATE TABLE reactions_table (
+  id SERIAL PRIMARY KEY,
+  server_id BIGINT NOT NULL,
+  channel_id BIGINT NOT NULL,
+  message_id BIGINT NOT NULL,
+  emoji VARCHAR(255) NOT NULL,
+  role_id BIGINT NOT NULL,
+  UNIQUE (server_id, channel_id, message_id, emoji) -- Ensures each emoji is unique for a message
+);
